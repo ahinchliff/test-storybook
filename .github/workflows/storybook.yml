@@ -5,7 +5,10 @@ on:
     branches:
       - main
 
-permissions: write-all
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   deploy:
@@ -13,6 +16,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Install packages
+        run: yarn
 
       - name: Build Storybook
         run: yarn build-storybook
