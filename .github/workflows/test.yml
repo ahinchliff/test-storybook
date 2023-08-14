@@ -1,0 +1,100 @@
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - staging
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.x' # TODO: Use Volta to install node and yarn
+          cache: 'yarn'
+
+      - name: Install Modules
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_ACTIONS_PAT }}" >> ./.npmrc
+          yarn install --frozen-lockfile --immutable
+
+      - name: Test
+        run: yarn test
+
+      - name: Test old
+        run: |
+          sed -i -e "s/arm64v8\/mysql:8.0.32/mysql:8.0.32/g" docker-compose.yml
+          
+          echo username=root                                                        > .env
+          echo password=                                                           >> .env
+          echo database=circuit                                                    >> .env
+          echo database_UT=montu_ut                                                >> .env
+          echo host=127.0.0.1                                                      >> .env
+          echo DB_LOGGING=true                                                     >> .env
+          echo SECRETKEY=montuapp                                                  >> .env
+          echo AES_SALT=HRX/LjRbjnNBbSTX55egeEkHi81MOa1f                           >> .env
+          echo CLIENT_URL=http://localhost:3000                                    >> .env
+          echo SERVER_URL=http://localhost:8000                                    >> .env
+          echo USE_XERO_CUSTOM_CONNECTIONS=true                                    >> .env
+          echo AWS_REGION=ap-southeast-2                                           >> .env
+          echo SAS_S3_BUCKETNAME=montu-circuit-stage-sas-files                     >> .env
+          echo SES_REGION=ap-southeast-2                                           >> .env
+          echo PHARMACY_S3_BUCKETNAME=montu-circuit-stage-pharmacy-files           >> .env
+          echo SHIPPING_COST=35                                                    >> .env
+          echo ORDERID_PREFIX=MPRS10000                                            >> .env
+          echo GPID_PREFIX=MDID10000                                               >> .env
+          echo PATIENTID_PREFIX=MPAT10000                                          >> .env
+          echo CLINICID_PREFIX=MONCLI0000                                          >> .env
+          echo PHARMACYID_PREFIX=MPID10000                                         >> .env
+          echo LIAISONID_PREFIX=BDMS1000                                           >> .env
+          echo TZ=utc                                                              >> .env
+          echo BCC_EMAIL=test@fake.com                                             >> .env
+          echo PORT=8000                                                           >> .env
+          echo PMS_BDM=1                                                           >> .env
+          echo APM_HOST=https://fake.aws.cloud.es.io/                              >> .env
+          echo S3_AP_DOCUMENTS_BUCKET=fake-bucket                                  >> .env
+          echo S3_MONTU_CIRCUIT_ATTACHMENT_FILES_BUCKET=fake-bucket                >> .env
+          echo S3_MONTU_CIRCUIT_ATTACHMENT_PUBLIC=fake-bucket                      >> .env
+          echo SUPPLIER_PREFIX=MSUP1000                                            >> .env
+          echo XERO_CN_ACCOUNT_CODE=720                                            >> .env
+          echo XERO_CN_ACCOUNT_CODE_BEFORE_SHIPPED=495                             >> .env
+          echo EXPORT_SHIP_S3_BUCKETNAME=fake-bucket                               >> .env
+          echo ADMIN_USER=test@fake.com                                            >> .env
+          echo PERSCRIPTION_S3_URL=https://fake-bucket.net/downloads/prescriptions >> .env
+          echo SES_NOTIFICATION_EMAIL=test@fake.com                                >> .env
+          echo GPONBOARD_SOURCE_EMAIL=test@fake.com                                >> .env
+          echo SES_ORDERS_SOURCE_EMAIL=test@fake.com                               >> .env
+          echo SES_SOURCE_EMAIL=test@fake.com                                      >> .env
+          echo ADMIN_BACKDOOR_USER_PROD=test@fake.com                              >> .env
+          echo ADMIN_BACKDOOR_USER=test@fake.com                                   >> .env
+          echo AWS_SQS_REGION=ap-southeast-2                                       >> .env
+          echo AWS_SQS_QUEUE_NAME=DataQueueDevelopmentSekar.fifo                   >> .env
+          echo PMS_URL=http://localhost:9000/api/v1                                >> .env
+          echo PMS_USER_PROD=test@fake.com                                         >> .env
+          echo PMS_PASSWORD_PROD=temp1234                                          >> .env
+          echo PMS_USER=test@fake.com                                              >> .env
+          echo PMS_PASSWORD=temp1234                                               >> .env
+          echo S3_PRODUCT_IMAGE_BUCKET=fake-bucket                                 >> .env
+          echo HOME_PHARMACY_ID=2                                                  >> .env
+          echo SENDGRID_NOTIFICATION_EMAIL=test@fake.com                           >> .env
+          echo SENDGRID_GPONBOARD_SOURCE_EMAIL=test@fake.com                       >> .env
+          echo SENDGRID_ORDERS_SOURCE_EMAIL=test@fake.com                          >> .env
+          echo SENDGRID_SOURCE_EMAIL=test@fake.com                                 >> .env
+          echo database_UT=circuit                                                 >> .env
+          echo E_WAY_PAYMENT_API_ENDPOINT=Sandbox                                  >> .env
+          echo E_WAY_PAYMENT_RESPONSE_REDIRECT_URL=/paymentresponse                >> .env
+          echo E_WAY_ORDER_INVOICES_BUCKETNAME=fake-bucket                         >> .env
+          echo ORDER_GROUP_PREFIX=GMPRS1000                                        >> .env
+          echo REFERAL_URL=https://fake.com                                        >> .env
+          echo GQL_SERVER_ENABLED=true                                             >> .env
+
+          docker-compose up --detach
+          sleep 15
+          yarn build
+          yarn test:old

@@ -1,0 +1,24 @@
+name: PR Merge Slack Notification
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+jobs:
+  notify:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # Notify slack channel
+      - name: slackify release body
+        id: release_body
+        uses: LoveToKnow/slackify-markdown-action@v1.0.0
+        with:
+          text: ${{ github.event.pull_request.body }}
+      - uses: MontuGroup/slack-release-notification-action@main
+        with:
+          title: ${{ github.event.pull_request.title }}
+          body: ${{ steps.release_body.outputs.text }}
+          context: ${{ github.event.repository.name }}
